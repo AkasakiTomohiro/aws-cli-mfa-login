@@ -33,7 +33,22 @@ to quickly create a Cobra application.`,
 		// AWS Configから指定されたプロファイルの認証情報を取得
 		cfg, err := config.LoadDefaultConfig(context.Background(), config.WithSharedConfigProfile(profile))
 		if err != nil {
-			log.Fatalf("failed to load shared config profile: %v", err)
+			log.Fatalln(err)
+			return
+		}
+
+		// MFAのシリアル番号が指定されていない場合はAWS Configから取得
+		if serialNumber == "" {
+			outCfg, err := config.LoadSharedConfigProfile(context.Background(), outProfile)
+			if err != nil {
+				log.Fatalln(err)
+				return
+			}
+			serialNumber = outCfg.MFASerial
+			if serialNumber == "" {
+				log.Fatalln("There is no value for mfa_serial in the AWS configure specified in the --out-profile argument. Please specify the --serial-number argument.")
+				return
+			}
 		}
 
 		// ユーザーからMFAのOTPを入力してもらう
@@ -62,6 +77,7 @@ to quickly create a Cobra application.`,
 		exec.Command("aws", "configure", "set", "aws_session_token", *resp.Credentials.SessionToken, "--profile", outProfile).Output()
 		exec.Command("aws", "configure", "set", "region", "ap-northeast-1", "--profile", outProfile).Output()
 		exec.Command("aws", "configure", "set", "output", "json", "--profile", outProfile).Output()
+		exec.Command("aws", "configure", "set", "mfa_serial", serialNumber, "--profile", outProfile).Output()
 	},
 }
 
@@ -82,7 +98,7 @@ func init() {
 
 	// また、Cobra はローカルフラグもサポートしており、これはこのアクションが直接呼び出されたときにのみ有効になります。
 	rootCmd.Flags().StringVarP(&profile, "profile", "p", "default", "AWS profile name")
-	rootCmd.Flags().StringVarP(&serialNumber, "serial-number", "s", "", `MFA identifier. If not specified, the value set in AWS Config will be used.
+	rootCmd.Flags().StringVarP(&serialNumber, "serial-number", "s", "", `MFA identifier. If not specified, the value of mfa_serial in AWS configure specified in the --out-profile argument is used.
 	Ex: arn:aws:iam::123456789012:mfa/user
 	`)
 	rootCmd.Flags().StringVarP(&outProfile, "out-profile", "o", "default-sts", "AWS profile name to be used in STS")
