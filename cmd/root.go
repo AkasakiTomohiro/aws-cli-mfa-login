@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
@@ -16,6 +17,7 @@ import (
 var profile string
 var outProfile string
 var serialNumber string
+var durationSeconds int32
 
 // rootCmd は、サブコマンドなしで呼び出された場合の基本コマンドを表します。
 var rootCmd = &cobra.Command{
@@ -63,13 +65,19 @@ to quickly create a Cobra application.`,
 
 			// 取得したOTPを使ってSTSのセッショントークンを取得
 			stsClient := sts.NewFromConfig(cfg)
-			resp, err = stsClient.GetSessionToken(context.Background(), &sts.GetSessionTokenInput{SerialNumber: &serialNumber, TokenCode: &tokenCode})
+			resp, err = stsClient.GetSessionToken(context.Background(), &sts.GetSessionTokenInput{
+				SerialNumber:    &serialNumber,
+				TokenCode:       &tokenCode,
+				DurationSeconds: &durationSeconds,
+			})
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 			break
 		}
+		localTZ := time.Now().Location()
+		log.Print("STS Token Expiration Date: ", resp.Credentials.Expiration.In(localTZ))
 
 		// 取得したセッショントークンをAWS Configに保存
 		exec.Command("aws", "configure", "set", "aws_access_key_id", *resp.Credentials.AccessKeyId, "--profile", outProfile).Output()
@@ -102,4 +110,5 @@ func init() {
 	Ex: arn:aws:iam::123456789012:mfa/user
 	`)
 	rootCmd.Flags().StringVarP(&outProfile, "out-profile", "o", "default-sts", "AWS profile name to be used in STS")
+	rootCmd.Flags().Int32VarP(&durationSeconds, "duration-seconds", "d", 3600, "The duration, in seconds, that the credentials should remain valid.")
 }
