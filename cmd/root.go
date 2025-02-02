@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -13,6 +14,7 @@ import (
 )
 
 var profile string
+var outProfile string
 var serialNumber string
 
 // rootCmd は、サブコマンドなしで呼び出された場合の基本コマンドを表します。
@@ -53,10 +55,13 @@ to quickly create a Cobra application.`,
 			}
 			break
 		}
-		log.Print(*resp.Credentials.AccessKeyId)
-		log.Print(*resp.Credentials.SecretAccessKey)
-		log.Print(*resp.Credentials.SessionToken)
-		log.Print(resp.Credentials.Expiration)
+
+		// 取得したセッショントークンをAWS Configに保存
+		exec.Command("aws", "configure", "set", "aws_access_key_id", *resp.Credentials.AccessKeyId, "--profile", outProfile).Output()
+		exec.Command("aws", "configure", "set", "aws_secret_access_key", *resp.Credentials.SecretAccessKey, "--profile", outProfile).Output()
+		exec.Command("aws", "configure", "set", "aws_session_token", *resp.Credentials.SessionToken, "--profile", outProfile).Output()
+		exec.Command("aws", "configure", "set", "region", "ap-northeast-1", "--profile", outProfile).Output()
+		exec.Command("aws", "configure", "set", "output", "json", "--profile", outProfile).Output()
 	},
 }
 
@@ -80,4 +85,5 @@ func init() {
 	rootCmd.Flags().StringVarP(&serialNumber, "serial-number", "s", "", `MFA identifier. If not specified, the value set in AWS Config will be used.
 	Ex: arn:aws:iam::123456789012:mfa/user
 	`)
+	rootCmd.Flags().StringVarP(&outProfile, "out-profile", "o", "default-sts", "AWS profile name to be used in STS")
 }
