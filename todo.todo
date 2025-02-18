@@ -3,5 +3,9 @@
 - [x] AWS Configにmfa_serialがある場合はこれを参照して短命なトークンを取得する
 - [x] 引数にトークンの有効期限を指定できるようにする。有効期限はAWS Config（duration_seconds）で設定されている場合はそれを参照する。
 - [x] MFA識別子を指定したプロファイルから参照できるようにする
-- [ ] タグ付与を契機にGitHub Actionsでリリースページにwin/mac/linux用のバイナリをアップロードする
-- [ ] 【できたら】credential_processを用いて有効期限が切れている場合は自動更新できるような仕組みを作る
+- [x] root.goファイルのリファクタリング
+- [ ] 仮想MFA選択のデザイン調整
+- [-] タグ付与を契機にGitHub Actionsでリリースページにwin/mac/linux用のバイナリをアップロードする
+- [-] 【できたら】credential_processを用いて有効期限が切れている場合は自動更新できるような仕組みを作る（https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sourcing-external.html）
+- [-] 【できたら】Keeper連携（https://docs.keeper.io/en/privileged-access-manager/secrets-manager/developer-sdk-library/golang-sdk）
+- [-] 【できたら】1Password連携（https://github.com/1Password/onepassword-sdk-go）
